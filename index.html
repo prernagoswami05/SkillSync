@@ -1,0 +1,1815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SkillSync – Placement Preparation System</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+
+/* color variables */
+:root {
+  --bg:      #07090f;
+  --bg2:     #0c0f18;
+  --surface: #101520;
+  --sur2:    #161d2e;
+  --border:  #1c2840;
+  --bor2:    #243355;
+  --accent:  #3b82f6;
+  --cyan:    #06b6d4;
+  --purple:  #8b5cf6;
+  --green:   #10b981;
+  --yellow:  #f59e0b;
+  --red:     #ef4444;
+  --orange:  #f97316;
+  --text:    #e2e8f0;
+  --text2:   #7a90b0;
+  --text3:   #374865;
+}
+
+/* basic reset */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--bor2); border-radius: 3px; }
+
+/* subtle grid pattern on background */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 44px 44px;
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* page switching */
+.page { display: none; position: relative; z-index: 1; }
+.page.active { display: block; }
+
+/* login page */
+#login-page {
+  min-height: 100vh;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+#login-page.active { display: flex; }
+
+.login-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 48px 40px;
+  width: 100%; max-width: 440px;
+  text-align: center;
+  box-shadow: 0 0 80px rgba(59,130,246,0.07);
+  animation: popIn 0.45s ease;
+}
+@keyframes popIn {
+  from { opacity:0; transform: translateY(20px) scale(0.97); }
+  to   { opacity:1; transform: translateY(0) scale(1); }
+}
+
+/* logo section */
+.logo-wrap { display:inline-flex; align-items:center; gap:10px; margin-bottom:24px; }
+.logo-icon {
+  width:42px; height:42px; border-radius:11px;
+  background: linear-gradient(135deg, var(--accent), var(--purple));
+  display:flex; align-items:center; justify-content:center;
+  font-size:19px;
+}
+.logo-txt { font-size:1.4rem; font-weight:800; letter-spacing:-0.03em; }
+.logo-txt em { font-style:normal; color:var(--accent); }
+
+.login-card h2 { font-size:1.35rem; font-weight:700; margin-bottom:6px; }
+.login-card > p { color:var(--text2); font-size:0.84rem; margin-bottom:26px; line-height:1.65; }
+
+/* form fields */
+.fld { margin-bottom:13px; text-align:left; }
+.fld label { display:block; font-size:0.71rem; font-weight:700; color:var(--text2); letter-spacing:0.07em; text-transform:uppercase; margin-bottom:6px; }
+.fld input, .fld select {
+  width:100%; padding:11px 14px;
+  background:var(--sur2); border:1px solid var(--border);
+  border-radius:10px; color:var(--text);
+  font-family:inherit; font-size:0.87rem;
+  outline:none; transition:border-color 0.2s, box-shadow 0.2s;
+}
+.fld input::placeholder { color:var(--text3); }
+.fld input:focus, .fld select:focus {
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(59,130,246,0.12);
+}
+.fld select option { background:var(--sur2); }
+
+/* skill checkboxes */
+.skill-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+.scb {
+  display:flex; align-items:center; gap:8px;
+  padding:9px 11px;
+  background:var(--sur2); border:1px solid var(--border);
+  border-radius:9px; cursor:pointer;
+  font-size:0.79rem; font-weight:500;
+  transition:all 0.17s; user-select:none;
+}
+.scb.on { border-color:var(--accent); background:rgba(59,130,246,0.07); color:var(--accent); }
+.scb-dot { width:13px; height:13px; border-radius:4px; border:2px solid var(--bor2); transition:all 0.17s; flex-shrink:0; }
+.scb.on .scb-dot { background:var(--accent); border-color:var(--accent); }
+
+.login-btn {
+  width:100%; padding:12px; margin-top:8px;
+  background:linear-gradient(135deg, var(--accent), var(--purple));
+  border:none; border-radius:11px; color:#fff;
+  font-family:inherit; font-size:0.93rem; font-weight:700;
+  cursor:pointer; transition:opacity 0.2s, transform 0.17s;
+}
+.login-btn:hover { opacity:0.87; transform:translateY(-1px); }
+.lerr { color:var(--red); font-size:0.76rem; margin-top:5px; display:none; }
+
+/* main app layout */
+#app-page { display:none; min-height:100vh; }
+#app-page.active { display:block; }
+
+/* top navigation bar */
+.topbar {
+  position:fixed; top:0; left:0; right:0; z-index:100;
+  height:56px;
+  background:rgba(7,9,15,0.93);
+  backdrop-filter:blur(18px);
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 20px;
+}
+.tb-l { display:flex; align-items:center; gap:9px; }
+.tb-ico {
+  width:30px; height:30px; border-radius:8px;
+  background:linear-gradient(135deg, var(--accent), var(--purple));
+  display:flex; align-items:center; justify-content:center; font-size:13px;
+}
+.tb-title { font-size:0.95rem; font-weight:800; letter-spacing:-0.02em; }
+.tb-title em { font-style:normal; color:var(--accent); }
+.tb-sub { font-size:0.6rem; color:var(--text3); font-family:'Fira Code',monospace; margin-left:4px; }
+.tb-r { display:flex; align-items:center; gap:10px; }
+.tb-user { display:flex; align-items:center; gap:6px; font-size:0.78rem; color:var(--text2); }
+.tb-av {
+  width:28px; height:28px; border-radius:50%;
+  background:linear-gradient(135deg, var(--accent), var(--purple));
+  display:flex; align-items:center; justify-content:center;
+  font-size:0.65rem; font-weight:700; color:#fff;
+}
+.logout-btn {
+  font-size:0.7rem; cursor:pointer;
+  border:1px solid var(--border); border-radius:7px;
+  padding:4px 10px; background:transparent;
+  font-family:inherit; color:var(--text3); transition:all 0.17s;
+}
+.logout-btn:hover { color:var(--red); border-color:var(--red); }
+
+/* sidebar */
+.sidebar {
+  position:fixed; top:56px; left:0; bottom:0;
+  width:206px; background:var(--bg2);
+  border-right:1px solid var(--border);
+  padding:10px 8px; z-index:50; overflow-y:auto;
+}
+.nsec { font-size:0.58rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--text3); padding:0 8px; margin:12px 0 4px; }
+.ni {
+  display:flex; align-items:center; gap:8px;
+  padding:8px 9px; border-radius:8px; margin-bottom:1px;
+  cursor:pointer; font-size:0.79rem; font-weight:500;
+  color:var(--text2); transition:all 0.15s;
+  border-left:3px solid transparent;
+}
+.ni:hover { background:var(--surface); color:var(--text); }
+.ni.on    { background:rgba(59,130,246,0.09); color:var(--accent); border-left-color:var(--accent); }
+.ni-ico   { font-size:0.88rem; width:16px; text-align:center; }
+
+/* content area */
+.main {
+  margin-left:206px;
+  padding:70px 22px 48px;
+  min-height:100vh;
+  position:relative; z-index:1;
+}
+
+/* each section/page inside app */
+.view { display:none; animation:fadeIn 0.26s ease; }
+.view.active { display:block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+/* reusable card */
+.card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:13px; padding:18px;
+  transition:border-color 0.17s, transform 0.17s, box-shadow 0.17s;
+}
+.card:hover { border-color:var(--bor2); transform:translateY(-2px); box-shadow:0 7px 22px rgba(0,0,0,0.3); }
+.clbl { font-size:0.61rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--text3); margin-bottom:7px; }
+
+/* grid helpers */
+.g2 { display:grid; grid-template-columns:1fr 1fr;       gap:13px; }
+.g3 { display:grid; grid-template-columns:1fr 1fr 1fr;   gap:13px; }
+.g4 { display:grid; grid-template-columns:repeat(4,1fr); gap:11px; }
+
+/* small stat boxes on dashboard */
+.scard {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:12px; padding:16px; position:relative; overflow:hidden;
+}
+.scard::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--c,var(--accent)); }
+.sc-i { font-size:1.2rem; margin-bottom:8px; }
+.sc-l { font-size:0.59rem; font-weight:700; color:var(--text3); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:3px; }
+.sc-v { font-size:1.3rem; font-weight:800; font-family:'Fira Code',monospace; }
+.sc-s { font-size:0.64rem; color:var(--text2); margin-top:2px; }
+
+/* buttons */
+.btn {
+  display:inline-flex; align-items:center; gap:6px;
+  background:linear-gradient(135deg, var(--accent), var(--purple));
+  color:#fff; border:none; border-radius:9px;
+  padding:9px 18px; font-family:inherit;
+  font-size:0.83rem; font-weight:700; cursor:pointer;
+  transition:opacity 0.17s, transform 0.15s;
+}
+.btn:hover { opacity:0.85; transform:translateY(-1px); }
+.btn.g  { background:linear-gradient(135deg,var(--green),#0891b2); }
+.btn.p  { background:linear-gradient(135deg,var(--purple),#ec4899); }
+.btn.y  { background:linear-gradient(135deg,var(--yellow),var(--orange)); }
+.btn.cy { background:linear-gradient(135deg,var(--cyan),var(--accent)); }
+.btn-gh {
+  background:transparent; border:1px solid var(--bor2); color:var(--text2);
+  border-radius:9px; padding:8px 15px;
+  font-family:inherit; font-size:0.81rem; font-weight:500;
+  cursor:pointer; transition:all 0.15s;
+}
+.btn-gh:hover { border-color:var(--accent); color:var(--accent); }
+
+/* beginner / intermediate / advanced pill */
+.pill { display:inline-block; padding:3px 10px; border-radius:20px; font-size:0.64rem; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; }
+.pill.beg { background:rgba(245,158,11,0.12); color:var(--yellow); border:1px solid rgba(245,158,11,0.25); }
+.pill.int { background:rgba(59,130,246,0.11); color:var(--accent); border:1px solid rgba(59,130,246,0.25); }
+.pill.adv { background:rgba(16,185,129,0.11); color:var(--green);  border:1px solid rgba(16,185,129,0.25); }
+
+/* progress bar */
+.pb { margin-bottom:10px; }
+.pb-t { display:flex; justify-content:space-between; margin-bottom:4px; font-size:0.71rem; }
+.pb-t span:last-child { font-family:'Fira Code',monospace; font-size:0.65rem; color:var(--text2); }
+.pb-bar  { height:5px; background:var(--border); border-radius:99px; overflow:hidden; }
+.pb-fill { height:100%; border-radius:99px; transition:width 0.9s ease; }
+
+/* strong / weak / average chip */
+.chip { display:inline-block; font-size:0.59rem; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; padding:2px 7px; border-radius:4px; }
+.chip.s { background:rgba(16,185,129,0.13); color:var(--green); }
+.chip.w { background:rgba(239,68,68,0.12);  color:var(--red);   }
+.chip.a { background:rgba(245,158,11,0.12); color:var(--yellow); }
+
+.hr { border:none; border-top:1px solid var(--border); margin:14px 0; }
+
+/* toast popup bottom right */
+.toast {
+  position:fixed; bottom:20px; right:20px; z-index:9999;
+  background:var(--sur2); border:1px solid var(--bor2);
+  border-radius:9px; padding:9px 15px; font-size:0.75rem;
+  box-shadow:0 7px 22px rgba(0,0,0,0.45);
+  transform:translateY(60px); opacity:0; transition:all 0.23s ease;
+  pointer-events:none;
+}
+.toast.show { transform:translateY(0); opacity:1; }
+
+/* loading spinner */
+.analyzing { display:none; align-items:center; gap:8px; justify-content:center; padding:12px 0; color:var(--accent); font-size:0.84rem; font-weight:600; }
+.analyzing.show { display:flex; }
+.spin { width:15px; height:15px; border:2px solid rgba(59,130,246,0.2); border-top-color:var(--accent); border-radius:50%; animation:spin 0.7s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* quiz progress bar at top */
+.qbar-w { height:3px; background:var(--border); border-radius:99px; overflow:hidden; margin-bottom:20px; }
+.qbar-f { height:100%; background:linear-gradient(90deg,var(--accent),var(--purple)); border-radius:99px; transition:width 0.4s ease; }
+.q-meta { display:flex; justify-content:space-between; margin-bottom:12px; font-size:0.71rem; color:var(--text2); }
+.q-tag  { display:inline-block; font-size:0.57rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; padding:2px 8px; border-radius:5px; margin-bottom:9px; }
+.q-txt  { font-size:0.94rem; font-weight:600; line-height:1.65; margin-bottom:15px; }
+.opts   { display:flex; flex-direction:column; gap:7px; }
+.opt {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 14px; background:var(--sur2);
+  border:1px solid var(--border); border-radius:9px;
+  color:var(--text); font-family:inherit; font-size:0.83rem;
+  cursor:pointer; transition:all 0.14s; text-align:left;
+}
+.opt:hover:not(:disabled) { border-color:var(--accent); background:rgba(59,130,246,0.05); }
+.opt.correct { border-color:var(--green);  background:rgba(16,185,129,0.07); color:var(--green); }
+.opt.wrong   { border-color:var(--red);    background:rgba(239,68,68,0.07);  color:var(--red);  }
+.opt:disabled { cursor:default; }
+.olet { width:23px; height:23px; border-radius:6px; background:var(--border); display:flex; align-items:center; justify-content:center; font-size:0.63rem; font-weight:700; font-family:'Fira Code',monospace; flex-shrink:0; }
+
+/* circular score display */
+.ring-w { display:flex; justify-content:center; margin:10px 0; }
+.ring   { width:108px; height:108px; border-radius:50%; display:flex; align-items:center; justify-content:center; position:relative; }
+.ring::after { content:''; position:absolute; width:76px; height:76px; border-radius:50%; background:var(--surface); }
+.ring-in  { position:relative; z-index:1; text-align:center; }
+.ring-num { font-size:1.4rem; font-weight:800; font-family:'Fira Code',monospace; }
+.ring-lbl { font-size:0.52rem; color:var(--text2); margin-top:1px; }
+
+/* mentor chat area */
+.m-row { display:flex; gap:7px; margin-bottom:12px; }
+.m-inp {
+  flex:1; padding:10px 13px; background:var(--sur2);
+  border:1px solid var(--border); border-radius:9px; color:var(--text);
+  font-family:inherit; font-size:0.84rem; outline:none; transition:border-color 0.2s;
+}
+.m-inp:focus { border-color:var(--accent); }
+.m-inp::placeholder { color:var(--text3); }
+.m-ans { background:var(--sur2); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:9px; padding:14px; font-size:0.82rem; line-height:1.72; display:none; animation:fadeIn 0.26s ease; }
+.m-ans.show { display:block; }
+.m-bot { font-size:0.59rem; font-weight:700; letter-spacing:0.08em; color:var(--accent); text-transform:uppercase; margin-bottom:5px; }
+
+/* roadmap timeline */
+.rm-wrap { position:relative; padding-left:24px; }
+.rm-wrap::before { content:''; position:absolute; left:8px; top:10px; bottom:10px; width:2px; background:var(--border); }
+.rm-step { position:relative; margin-bottom:11px; background:var(--surface); border:1px solid var(--border); border-radius:11px; padding:13px 15px; animation:fadeIn 0.3s ease both; }
+.rm-step::before { content:''; position:absolute; left:-21px; top:16px; width:10px; height:10px; border-radius:50%; background:var(--accent); border:2px solid var(--bg); }
+.rm-step.locked::before { background:var(--bor2); }
+.rm-step h4 { font-size:0.84rem; font-weight:600; margin-bottom:3px; }
+.rm-step p  { font-size:0.74rem; color:var(--text2); line-height:1.55; }
+.rm-tags { display:flex; flex-wrap:wrap; gap:4px; margin-top:7px; }
+.rm-tag  { font-size:0.57rem; padding:2px 7px; border-radius:4px; background:var(--sur2); border:1px solid var(--bor2); color:var(--text3); font-weight:500; }
+
+/* company cards */
+.co-card { background:var(--surface); border:1px solid var(--border); border-radius:11px; padding:14px; transition:all 0.15s; }
+.co-card:hover { border-color:var(--bor2); transform:translateY(-2px); }
+.co-badge { font-size:0.55rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:6px; }
+.co-card h4 { font-size:0.86rem; font-weight:700; margin-bottom:3px; }
+.co-card p  { font-size:0.71rem; color:var(--text2); line-height:1.5; margin-bottom:9px; }
+.ctc-r { display:flex; justify-content:space-between; align-items:center; }
+.ctc-l { font-size:0.56rem; color:var(--text3); }
+.ctc-v { font-family:'Fira Code',monospace; font-size:0.75rem; color:var(--green); font-weight:500; }
+
+/* readiness bar with moving dot */
+.r-wrap { margin:10px 0; }
+.r-bar  { height:8px; border-radius:99px; background:linear-gradient(90deg,var(--red),var(--yellow),var(--green)); position:relative; }
+.r-need { position:absolute; top:-4px; width:16px; height:16px; border-radius:50%; background:#fff; border:3px solid var(--accent); transition:left 1s cubic-bezier(0.34,1.56,0.64,1); transform:translateX(-50%); }
+
+/* placement guide items */
+.guide-item { display:flex; gap:11px; padding:10px 0; border-bottom:1px solid var(--border); }
+.guide-item:last-child { border-bottom:none; }
+.guide-n { width:22px; height:22px; border-radius:6px; flex-shrink:0; background:linear-gradient(135deg,var(--accent),var(--purple)); display:flex; align-items:center; justify-content:center; font-size:0.61rem; font-weight:700; color:#fff; font-family:'Fira Code',monospace; }
+.guide-t { font-size:0.81rem; line-height:1.6; color:var(--text); }
+.guide-t strong { color:var(--accent); font-weight:600; }
+
+/* tags used in guide section */
+.tag-cloud { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.tg {
+  padding:4px 11px; border-radius:7px;
+  font-size:0.73rem; font-weight:600;
+  background:var(--sur2); border:1px solid var(--bor2); color:var(--text2);
+  transition:all 0.15s;
+}
+.tg:hover { border-color:var(--accent); color:var(--accent); }
+.tg.blue   { border-color:rgba(59,130,246,0.4);  color:var(--accent); background:rgba(59,130,246,0.07); }
+.tg.green  { border-color:rgba(16,185,129,0.4);  color:var(--green);  background:rgba(16,185,129,0.07); }
+.tg.yellow { border-color:rgba(245,158,11,0.4);  color:var(--yellow); background:rgba(245,158,11,0.07); }
+.tg.purple { border-color:rgba(139,92,246,0.4);  color:var(--purple); background:rgba(139,92,246,0.07); }
+.tg.cyan   { border-color:rgba(6,182,212,0.4);   color:var(--cyan);   background:rgba(6,182,212,0.07); }
+.tg.orange { border-color:rgba(249,115,22,0.4);  color:var(--orange); background:rgba(249,115,22,0.07); }
+
+/* placement process steps */
+.step-card {
+  background:var(--sur2); border:1px solid var(--border);
+  border-radius:10px; padding:13px 15px;
+  display:flex; gap:12px; align-items:flex-start;
+}
+.step-num {
+  width:28px; height:28px; border-radius:8px; flex-shrink:0;
+  background:linear-gradient(135deg,var(--accent),var(--purple));
+  display:flex; align-items:center; justify-content:center;
+  font-size:0.72rem; font-weight:700; color:#fff;
+  font-family:'Fira Code',monospace;
+}
+.step-info h4 { font-size:0.84rem; font-weight:600; margin-bottom:2px; }
+.step-info p  { font-size:0.73rem; color:var(--text2); line-height:1.55; }
+
+/* page heading style */
+.ph { margin-bottom:22px; }
+.ph h1 { font-size:1.4rem; font-weight:800; letter-spacing:-0.03em; }
+.ph p  { color:var(--text2); font-size:0.83rem; margin-top:4px; line-height:1.65; }
+.atag {
+  display:inline-flex; align-items:center; gap:4px;
+  background:rgba(59,130,246,0.09); border:1px solid rgba(59,130,246,0.22);
+  border-radius:20px; padding:3px 10px; margin-bottom:7px;
+  font-size:0.62rem; font-weight:700; color:var(--accent);
+  letter-spacing:0.09em; text-transform:uppercase;
+}
+
+/* mobile */
+@media(max-width:768px){
+  .sidebar { display:none; }
+  .main { margin-left:0; padding:65px 12px 28px; }
+  .g2,.g3,.g4 { grid-template-columns:1fr; }
+  .login-card { padding:28px 18px; }
+}
+
+</style>
+</head>
+<body>
+
+<!-- login screen -->
+<div id="login-page" class="page active">
+  <div class="login-card">
+
+    <div class="logo-wrap">
+      <div class="logo-icon">⚡</div>
+      <div class="logo-txt">Skill<em>Sync</em></div>
+    </div>
+
+   <h2>Placement Preparation System</h2>
+    <p>This project helps students prepare for placements by evaluating their skills through a quiz and showing their strengths and weak areas.</p>
+    <div class="fld">
+      <label>Your Full Name</label>
+      <input type="text" id="inp-name" placeholder="e.g. Priya Sharma" maxlength="30"/>
+    </div>
+
+    <div class="fld">
+      <label>Target Role</label>
+      <select id="inp-role">
+        <option value="">Select your target role...</option>
+        <option>Software Engineer</option>
+        <option>Data Analyst</option>
+        <option>Web Developer</option>
+        <option>System Engineer</option>
+        <option>Full Stack Developer</option>
+      </select>
+    </div>
+
+    <div class="fld">
+      <label>Skills to Assess</label>
+      <div class="skill-grid">
+        <div class="scb" data-skill="DSA"           onclick="toggleSkill(this)"><div class="scb-dot"></div>DSA</div>
+        <div class="scb" data-skill="Aptitude"      onclick="toggleSkill(this)"><div class="scb-dot"></div>Aptitude</div>
+        <div class="scb" data-skill="Core CS"       onclick="toggleSkill(this)"><div class="scb-dot"></div>Core CS</div>
+        <div class="scb" data-skill="Communication" onclick="toggleSkill(this)"><div class="scb-dot"></div>Communication</div>
+      </div>
+    </div>
+
+    <div id="lerr" class="lerr">Please enter your name and select at least one skill.</div>
+    <button class="login-btn" onclick="handleLogin()">Enter Dashboard →</button>
+
+  </div>
+</div>
+
+
+<!-- main app after login -->
+<div id="app-page" class="page">
+
+  <!-- top bar -->
+  <div class="topbar">
+    <div class="tb-l">
+      <div class="tb-ico">⚡</div>
+      <div class="tb-title">Skill<em>Sync</em></div>
+     <span class="tb-sub">PLACEMENT PREPARATION SYSTEM</span>
+    </div>
+    <div class="tb-r">
+      <div class="tb-user">
+        <div class="tb-av" id="tb-av">U</div>
+        <span id="tb-name">User</span>
+      </div>
+      <button class="logout-btn" onclick="handleLogout()">Logout</button>
+    </div>
+  </div>
+
+  <!-- sidebar navigation -->
+  <div class="sidebar">
+    <div class="nsec">Main</div>
+    <div class="ni on" id="nav-dashboard"  onclick="showSection('dashboard')">  <span class="ni-ico">🏠</span>Dashboard</div>
+    <div class="ni"    id="nav-assessment" onclick="showSection('assessment')"> <span class="ni-ico">📝</span>Assessment</div>
+
+    <div class="nsec">Reports</div>
+    <div class="ni"    id="nav-report"     onclick="showSection('report')">     <span class="ni-ico">📊</span>Performance Report</div>
+    <div class="ni"    id="nav-mentor"     onclick="showSection('mentor')">     <span class="ni-ico">🤖</span>Mentor</div>
+
+    <div class="nsec">Placement</div>
+    <div class="ni"    id="nav-roadmap"    onclick="showSection('roadmap')">    <span class="ni-ico">🗺️</span>Roadmap</div>
+    <div class="ni"    id="nav-companies"  onclick="showSection('companies')">  <span class="ni-ico">🏢</span>Companies</div>
+    <div class="ni"    id="nav-guide"      onclick="showSection('guide')">      <span class="ni-ico">📚</span>Placement Guide</div>
+  </div>
+
+  <!-- all sections go here -->
+  <div class="main">
+
+    <!-- dashboard -->
+    <div class="view active" id="view-dashboard">
+      <div class="ph">
+       <div class="atag">Placement System</div>
+        <h1 id="dash-greet">Welcome back!</h1>
+        <p>Your placement readiness overview. Take the assessment to see your results.</p>
+      </div>
+
+      <!-- 4 boxes at top -->
+      <div class="g4" style="margin-bottom:13px">
+        <div class="scard" style="--c:var(--accent)">
+          <div class="sc-i">🎯</div>
+          <div class="sc-l">Last Score</div>
+          <div class="sc-v" id="ds-score">—</div>
+          <div class="sc-s">out of 100</div>
+        </div>
+        <div class="scard" style="--c:var(--purple)">
+          <div class="sc-i">🏆</div>
+          <div class="sc-l">Level</div>
+          <div class="sc-v" id="ds-level" style="font-size:0.86rem;font-family:inherit">Not Assessed</div>
+          <div class="sc-s">readiness tier</div>
+        </div>
+        <div class="scard" style="--c:var(--green)">
+          <div class="sc-i">💼</div>
+          <div class="sc-l">Target Role</div>
+          <div class="sc-v" id="ds-role" style="font-size:0.74rem;font-family:inherit">—</div>
+          <div class="sc-s">your goal</div>
+        </div>
+        <div class="scard" style="--c:var(--yellow)">
+          <div class="sc-i">📚</div>
+          <div class="sc-l">Skills</div>
+          <div class="sc-v" id="ds-sc">0</div>
+          <div class="sc-s">domains tracked</div>
+        </div>
+      </div>
+
+      <div class="g2" style="margin-bottom:13px">
+
+        <!-- readiness meter -->
+        <div class="card">
+          <div class="clbl">Placement Readiness Status</div>
+          <div id="ds-ready">
+            <p style="color:var(--text2);font-size:0.8rem;margin-bottom:10px">Take the assessment to see your level.</p>
+            <div class="r-wrap">
+              <div class="r-bar"><div class="r-need" id="ds-needle" style="left:5%"></div></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:0.61rem;color:var(--text3);margin-top:3px">
+              <span>Beginner</span><span>Intermediate</span><span>Advanced</span>
+            </div>
+            <div style="margin-top:13px;text-align:center">
+              <button class="btn" onclick="showSection('assessment')">Start Assessment →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- skill bars -->
+        <div class="card">
+          <div class="clbl">Skill Profile</div>
+          <div id="ds-skills" style="margin-top:5px">
+            <p style="color:var(--text2);font-size:0.8rem">No data yet.</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- quick action buttons -->
+      <div class="card">
+        <div class="clbl">Quick Actions</div>
+        <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:8px">
+          <button class="btn"   onclick="showSection('assessment')">📝 Start Assessment</button>
+          <button class="btn g" onclick="showSection('roadmap')">🗺️ Roadmap</button>
+          <button class="btn p" onclick="showSection('mentor')">🤖 Mentor</button>
+          <button class="btn y" onclick="showSection('guide')">📚 Placement Guide</button>
+          <button class="btn cy" onclick="showSection('companies')">🏢 Companies</button>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- assessment / quiz section -->
+    <div class="view" id="view-assessment">
+      <div class="ph">
+        <div class="atag">Assessment Module</div>
+        <h1>Placement Assessment</h1>
+        <p>8 MCQ questions across DSA, Aptitude, Core CS and Communication. One at a time.</p>
+      </div>
+
+      <!-- shown before quiz starts -->
+      <div id="q-start">
+        <div class="card" style="max-width:520px;margin:0 auto;text-align:center;padding:34px">
+          <div style="font-size:2.4rem;margin-bottom:11px">📝</div>
+          <h2 style="font-size:1.15rem;font-weight:700;margin-bottom:6px">Ready to Begin?</h2>
+          <p style="color:var(--text2);font-size:0.81rem;line-height:1.65;margin-bottom:20px">
+            This module contains 8 MCQ questions from DSA, Aptitude, Core CS and Communication to evaluate student performance.<br/>
+            Takes about 5-8 minutes
+          </p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:20px;text-align:left">
+            <div style="padding:8px 10px;background:var(--sur2);border:1px solid var(--border);border-radius:8px;font-size:0.73rem"><span style="color:#4f8ef7;font-weight:700">●</span> DSA — 2 Questions</div>
+            <div style="padding:8px 10px;background:var(--sur2);border:1px solid var(--border);border-radius:8px;font-size:0.73rem"><span style="color:#f5c842;font-weight:700">●</span> Aptitude — 2 Questions</div>
+            <div style="padding:8px 10px;background:var(--sur2);border:1px solid var(--border);border-radius:8px;font-size:0.73rem"><span style="color:#7c5cfc;font-weight:700">●</span> Core CS — 2 Questions</div>
+            <div style="padding:8px 10px;background:var(--sur2);border:1px solid var(--border);border-radius:8px;font-size:0.73rem"><span style="color:#22d3a5;font-weight:700">●</span> Communication — 2 Questions</div>
+          </div>
+          <button class="btn" style="width:100%;justify-content:center;padding:12px" onclick="startQuiz()">Begin Assessment →</button>
+        </div>
+      </div>
+
+      <!-- quiz in progress -->
+      <div id="q-active" style="display:none;max-width:600px">
+        <div class="qbar-w"><div class="qbar-f" id="qbar" style="width:12.5%"></div></div>
+        <div class="q-meta">
+          <span id="q-cnt">Question 1 of 8</span>
+          <span id="q-dlbl">Domain: DSA</span>
+        </div>
+        <div class="card">
+          <div class="q-tag"  id="q-dtag"></div>
+          <div class="q-txt"  id="q-txt"></div>
+          <div class="opts"   id="q-opts"></div>
+          <div style="display:flex;justify-content:flex-end;margin-top:13px">
+            <button class="btn" id="q-next" style="display:none" onclick="nextQuestion()">Next →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- quiz finished -->
+      <div id="q-done" style="display:none;max-width:480px;margin:0 auto;text-align:center">
+        <div class="analyzing show" id="q-anim"><div class="spin"></div>Calculating your score...</div>
+        <div id="q-done-inner" style="display:none">
+          <div class="card" style="padding:30px">
+            <div style="font-size:2.2rem;margin-bottom:9px">🎉</div>
+            <h2 style="font-size:1.2rem;font-weight:700;margin-bottom:6px">Assessment Done!</h2>
+            <p style="color:var(--text2);font-size:0.81rem;line-height:1.65;margin-bottom:16px">Check your performance report for detailed results.</p>
+            <div style="display:flex;gap:7px;justify-content:center;flex-wrap:wrap">
+              <button class="btn"   onclick="showSection('report')">View Report →</button>
+              <button class="btn-gh" onclick="resetQuiz()">Retake</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- performance report section -->
+    <div class="view" id="view-report">
+      <div class="ph">
+        <div class="atag">Performance Report</div>
+        <h1>Your Results</h1>
+        <p>Score, level, strong and weak areas, and what to study next.</p>
+      </div>
+
+      <!-- shown if quiz not taken -->
+      <div id="rep-empty" class="card" style="text-align:center;padding:34px">
+        <div style="font-size:2.2rem;margin-bottom:9px">📊</div>
+        <h3 style="margin-bottom:5px">No Data Yet</h3>
+        <p style="color:var(--text2);font-size:0.8rem;margin-bottom:13px">Take the assessment first.</p>
+        <button class="btn" onclick="showSection('assessment')">Take Assessment →</button>
+      </div>
+
+      <!-- results shown after quiz -->
+      <div id="rep-res" style="display:none">
+        <div class="g2" style="margin-bottom:13px">
+
+          <!-- score ring and level -->
+          <div class="card" style="text-align:center">
+            <div class="clbl">Overall Score</div>
+            <div class="ring-w">
+              <div class="ring" id="rep-ring">
+                <div class="ring-in">
+                  <div class="ring-num" id="rep-rnum">0%</div>
+                  <div class="ring-lbl">SCORE</div>
+                </div>
+              </div>
+            </div>
+            <div id="rep-pill" style="margin-bottom:7px"></div>
+            <p id="rep-sum" style="font-size:0.76rem;color:var(--text2);line-height:1.6"></p>
+          </div>
+
+          <!-- strong and weak subjects -->
+          <div class="card">
+            <div class="clbl" style="margin-bottom:9px">Summary</div>
+            <div style="margin-bottom:11px">
+              <div style="font-size:0.7rem;font-weight:600;color:var(--green);margin-bottom:5px">✅ Strong Areas</div>
+              <div id="rep-strong" style="display:flex;flex-wrap:wrap;gap:4px"></div>
+            </div>
+            <div class="hr" style="margin:8px 0"></div>
+            <div>
+              <div style="font-size:0.7rem;font-weight:600;color:var(--red);margin-bottom:5px">⚠️ Needs Work</div>
+              <div id="rep-weak" style="display:flex;flex-wrap:wrap;gap:4px"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- domain wise bars -->
+        <div class="card" style="margin-bottom:13px">
+          <div class="clbl" style="margin-bottom:11px">Subject-wise Marks</div>
+          <div id="rep-bars"></div>
+        </div>
+
+        <!-- study suggestions -->
+        <div class="card">
+          <div class="clbl" style="margin-bottom:11px">What to Study Next</div>
+          <div id="rep-recs"></div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- mentor section -->
+    <div class="view" id="view-mentor">
+      <div class="ph">
+        <div class="atag">Placement Mentor</div>
+        <h1>Placement Guidance Section</h1>
+        <p>Ask questions about placement preparation. The suggestions depend on your performance level.</p>
+      </div>
+
+      <div style="max-width:640px">
+        <div class="card" style="margin-bottom:11px">
+          <div class="clbl" style="margin-bottom:8px">Type Your Question</div>
+          <div class="m-row">
+            <input class="m-inp" id="m-inp" type="text"
+              placeholder="e.g. How to prepare for DSA? Which companies to target?"
+              onkeydown="if(event.key==='Enter') getMentorAnswer()"/>
+            <button class="btn" onclick="getMentorAnswer()">Get Advice</button>
+          </div>
+          <!-- quick question buttons -->
+          <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center">
+            <span style="font-size:0.64rem;color:var(--text3)">Quick:</span>
+            <button class="btn-gh" style="font-size:0.64rem;padding:3px 7px" onclick="fillQuestion('How do I crack DSA interviews?')">DSA prep</button>
+            <button class="btn-gh" style="font-size:0.64rem;padding:3px 7px" onclick="fillQuestion('Which companies should I apply to?')">Companies</button>
+            <button class="btn-gh" style="font-size:0.64rem;padding:3px 7px" onclick="fillQuestion('How to improve aptitude?')">Aptitude</button>
+            <button class="btn-gh" style="font-size:0.64rem;padding:3px 7px" onclick="fillQuestion('What should I put on my resume?')">Resume</button>
+            <button class="btn-gh" style="font-size:0.64rem;padding:3px 7px" onclick="fillQuestion('How to prepare for HR interview?')">HR round</button>
+          </div>
+        </div>
+        <!-- answer box -->
+        <div class="m-ans" id="m-ans">
+          <div class="m-bot">💬 Placement Mentor</div>
+          <div id="m-ans-txt"></div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- roadmap section -->
+    <div class="view" id="view-roadmap">
+      <div class="ph">
+        <div class="atag">Study Roadmap</div>
+        <h1>Your Preparation Roadmap</h1>
+        <p>Step-by-step plan based on your current level.</p>
+      </div>
+      <div id="rm-out"></div>
+    </div>
+
+
+    <!-- companies section -->
+    <div class="view" id="view-companies">
+      <div class="ph">
+        <div class="atag">Company Suggestions</div>
+        <h1>Companies to Apply</h1>
+        <p>Based on your placement readiness level.</p>
+      </div>
+      <div id="co-out"></div>
+    </div>
+
+
+    <!-- full placement guide section -->
+    <div class="view" id="view-guide">
+      <div class="ph">
+        <div class="atag">Placement Guide</div>
+        <h1>Placement Preparation Guide</h1>
+        <p>Subjects, platforms, resume tips, and the full placement process — all in one place.</p>
+      </div>
+
+      <!-- core subjects -->
+      <div class="card" style="margin-bottom:13px">
+        <div class="clbl">Core Subjects</div>
+        <div class="g3" style="margin-top:10px">
+
+          <div style="background:var(--sur2);border:1px solid var(--border);border-radius:9px;padding:13px">
+            <div style="font-size:1.1rem;margin-bottom:5px">🔷</div>
+            <div style="font-size:0.8rem;font-weight:700;color:var(--accent);margin-bottom:4px">DSA</div>
+            <div style="font-size:0.72rem;color:var(--text2);line-height:1.6">Arrays, Linked Lists, Trees, Graphs, Sorting, DP, Recursion, Hashing, Heaps, Tries</div>
+          </div>
+
+          <div style="background:var(--sur2);border:1px solid var(--border);border-radius:9px;padding:13px">
+            <div style="font-size:1.1rem;margin-bottom:5px">💾</div>
+            <div style="font-size:0.8rem;font-weight:700;color:var(--purple);margin-bottom:4px">Operating Systems</div>
+            <div style="font-size:0.72rem;color:var(--text2);line-height:1.6">Processes, Threads, Scheduling, Memory Management, Deadlock, File Systems, Paging</div>
+          </div>
+
+          <div style="background:var(--sur2);border:1px solid var(--border);border-radius:9px;padding:13px">
+            <div style="font-size:1.1rem;margin-bottom:5px">🗄️</div>
+            <div style="font-size:0.8rem;font-weight:700;color:var(--green);margin-bottom:4px">DBMS</div>
+            <div style="font-size:0.72rem;color:var(--text2);line-height:1.6">SQL, Normalisation, ACID, ER Diagrams, Indexing, Transactions, Joins, Keys</div>
+          </div>
+
+          <div style="background:var(--sur2);border:1px solid var(--border);border-radius:9px;padding:13px">
+            <div style="font-size:1.1rem;margin-bottom:5px">🌐</div>
+            <div style="font-size:0.8rem;font-weight:700;color:var(--cyan);margin-bottom:4px">Computer Networks</div>
+            <div style="font-size:0.72rem;color:var(--text2);line-height:1.6">OSI Model, TCP/IP, HTTP/HTTPS, DNS, Routing, Subnetting, Firewalls, Sockets</div>
+          </div>
+
+          <div style="background:var(--sur2);border:1px solid var(--border);border-radius:9px;padding:13px">
+            <div style="font-size:1.1rem;margin-bottom:5px">🧩</div>
+            <div style="font-size:0.8rem;font-weight:700;color:var(--yellow);margin-bottom:4px">OOPs Concepts</div>
+            <div style="font-size:0.72rem;color:var(--text2);line-height:1.6">Encapsulation, Abstraction, Inheritance, Polymorphism, Interfaces, Design Patterns</div>
+          </div>
+
+          <div style="background:var(--sur2);border:1px solid var(--border);border-radius:9px;padding:13px">
+            <div style="font-size:1.1rem;margin-bottom:5px">🧮</div>
+            <div style="font-size:0.8rem;font-weight:700;color:var(--orange);margin-bottom:4px">System Design</div>
+            <div style="font-size:0.72rem;color:var(--text2);line-height:1.6">HLD, LLD, Load Balancers, Caching, Databases, Microservices, API Design, Scalability</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- programming languages -->
+      <div class="card" style="margin-bottom:13px">
+        <div class="clbl">Programming Languages</div>
+        <div class="tag-cloud" style="margin-top:8px">
+          <span class="tg blue">C++ — Best for DSA and competitive programming</span>
+          <span class="tg green">Java — Popular in placements, strong OOP</span>
+          <span class="tg yellow">Python — Clean syntax, good for interviews</span>
+          <span class="tg purple">JavaScript — Needed for web dev roles</span>
+        </div>
+        <div style="margin-top:10px;padding:10px 12px;background:var(--sur2);border:1px solid var(--border);border-radius:8px;font-size:0.77rem;color:var(--text2);line-height:1.65">
+          💡 <strong style="color:var(--text)">Tip:</strong> Learn one language well first. For DSA interviews, <strong style="color:var(--accent)">C++ or Java</strong> is best. For web dev roles, also learn <strong style="color:var(--accent)">JavaScript</strong>.
+        </div>
+      </div>
+
+      <!-- coding platforms -->
+      <div class="card" style="margin-bottom:13px">
+        <div class="clbl">Coding Platforms to Use</div>
+        <div class="g3" style="margin-top:9px">
+          <div style="background:var(--sur2);border:1px solid var(--border);border-radius:9px;padding:12px">
+            <div style="font-size:0.78rem;font-weight:700;color:var(--yellow);margin-bottom:5px">🔥 LeetCode</div>
+            <div style="font-size:0.71rem;color:var(--text2);line-height:1.6">Best for interview prep. Solve company-tagged questions. Aim for 100+ medium problems.</div>
+          </div>
+          <div style="background:var(--sur2);border:1px solid var(--border);border-radius:9px;padding:12px">
+            <div style="font-size:0.78rem;font-weight:700;color:var(--green);margin-bottom:5px">✅ HackerRank</div>
+            <div style="font-size:0.71rem;color:var(--text2);line-height:1.6">Good for beginners. Get certifications in Python, SQL, Java. Used in many company tests.</div>
+          </div>
+          <div style="background:var(--sur2);border:1px solid var(--border);border-radius:9px;padding:12px">
+            <div style="font-size:0.78rem;font-weight:700;color:var(--accent);margin-bottom:5px">💻 CodeStudio</div>
+            <div style="font-size:0.71rem;color:var(--text2);line-height:1.6">Topic-wise DSA sheets. Company-specific material. Very helpful for structured preparation.</div>
+          </div>
+          <div style="background:var(--sur2);border:1px solid var(--border);border-radius:9px;padding:12px">
+            <div style="font-size:0.78rem;font-weight:700;color:var(--purple);margin-bottom:5px">⚔️ Codeforces</div>
+            <div style="font-size:0.71rem;color:var(--text2);line-height:1.6">Competitive programming contests. Improves your speed and pressure handling.</div>
+          </div>
+          <div style="background:var(--sur2);border:1px solid var(--border);border-radius:9px;padding:12px">
+            <div style="font-size:0.78rem;font-weight:700;color:var(--cyan);margin-bottom:5px">📘 GeeksForGeeks</div>
+            <div style="font-size:0.71rem;color:var(--text2);line-height:1.6">Theory + practice. Great for Core CS concepts like OS, DBMS, CN.</div>
+          </div>
+          <div style="background:var(--sur2);border:1px solid var(--border);border-radius:9px;padding:12px">
+            <div style="font-size:0.78rem;font-weight:700;color:var(--orange);margin-bottom:5px">🎯 InterviewBit</div>
+            <div style="font-size:0.71rem;color:var(--text2);line-height:1.6">Structured prep path, timed mocks. Good for final stage interview practice.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- projects and github -->
+      <div class="card" style="margin-bottom:13px">
+        <div class="clbl">Projects & GitHub</div>
+        <div class="g2" style="margin-top:9px">
+          <div>
+            <div style="font-size:0.76rem;font-weight:700;color:var(--accent);margin-bottom:8px">📁 Project Ideas</div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <div style="font-size:0.73rem;padding:7px 9px;background:var(--sur2);border:1px solid var(--border);border-radius:7px"><strong style="color:var(--yellow)">Beginner:</strong> To-Do App, Calculator, Quiz App, Weather App</div>
+              <div style="font-size:0.73rem;padding:7px 9px;background:var(--sur2);border:1px solid var(--border);border-radius:7px"><strong style="color:var(--accent)">Intermediate:</strong> Blog, Chat App, E-commerce Site</div>
+              <div style="font-size:0.73rem;padding:7px 9px;background:var(--sur2);border:1px solid var(--border);border-radius:7px"><strong style="color:var(--green)">Advanced:</strong> Full-stack SaaS, ML project, distributed app</div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:0.76rem;font-weight:700;color:var(--green);margin-bottom:8px">🐙 GitHub Tips</div>
+            <div id="guide-github"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- placement rounds -->
+      <div class="card" style="margin-bottom:13px">
+        <div class="clbl">Placement Process — Step by Step</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:9px">
+
+          <div class="step-card">
+            <div class="step-num">01</div>
+            <div class="step-info">
+              <h4>Aptitude Round</h4>
+              <p>Quant, logical reasoning, verbal ability. Time-bound. Practice IndiaBix and R.S. Aggarwal daily.</p>
+            </div>
+          </div>
+
+          <div class="step-card">
+            <div class="step-num">02</div>
+            <div class="step-info">
+              <h4>Coding Round</h4>
+              <p>2-3 DSA problems in 60-90 minutes. Know arrays, strings, DP, graphs. Write clean code.</p>
+            </div>
+          </div>
+
+          <div class="step-card">
+            <div class="step-num">03</div>
+            <div class="step-info">
+              <h4>Technical Interview</h4>
+              <p>DSA questions, Core CS theory, and project discussion. Be honest about what you know.</p>
+            </div>
+          </div>
+
+          <div class="step-card">
+            <div class="step-num">04</div>
+            <div class="step-info">
+              <h4>HR Interview</h4>
+              <p>Strengths, weaknesses, why this company, salary. Use STAR format. Stay calm.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- resume and communication -->
+      <div class="card">
+        <div class="clbl">Resume & Communication</div>
+        <div class="g2" style="margin-top:9px">
+          <div>
+            <div style="font-size:0.76rem;font-weight:700;color:var(--accent);margin-bottom:8px">📄 Resume Tips</div>
+            <div id="guide-resume"></div>
+          </div>
+          <div>
+            <div style="font-size:0.76rem;font-weight:700;color:var(--purple);margin-bottom:8px">🗣️ Communication Tips</div>
+            <div id="guide-comm"></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end guide -->
+
+  </div><!-- end main -->
+</div><!-- end app-page -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+
+// quiz questions - 8 total, 2 per topic
+var questionsList = [
+  // DSA questions
+  { topic: 'DSA', color: '#4f8ef7',
+    question: 'What is the time complexity of binary search?',
+    options: ['O(n)', 'O(log n)', 'O(n²)', 'O(n log n)'],
+    correct: 1 },
+  { topic: 'DSA', color: '#4f8ef7',
+    question: 'Which data structure uses LIFO order?',
+    options: ['Queue', 'Stack', 'Array', 'Linked List'],
+    correct: 1 },
+
+  // aptitude questions
+  { topic: 'Aptitude', color: '#f5c842',
+    question: 'A train travels 300 km in 5 hours. What is its speed?',
+    options: ['50 km/h', '60 km/h', '70 km/h', '80 km/h'],
+    correct: 1 },
+  { topic: 'Aptitude', color: '#f5c842',
+    question: 'What is 20% of 350?',
+    options: ['60', '65', '70', '75'],
+    correct: 2 },
+
+  // core CS questions
+  { topic: 'Core CS', color: '#7c5cfc',
+    question: 'What does ACID stand for in DBMS?',
+    options: ['Access Control Integrity Design',
+              'Atomicity Consistency Isolation Durability',
+              'Array Cursor Index Data',
+              'None of these'],
+    correct: 1 },
+  { topic: 'Core CS', color: '#7c5cfc',
+    question: 'Which OSI layer is responsible for routing?',
+    options: ['Data Link', 'Transport', 'Network', 'Session'],
+    correct: 2 },
+
+  // communication questions
+  { topic: 'Communication', color: '#22d3a5',
+    question: 'Which sentence is correctly punctuated?',
+    options: ["Its a great day.", "It's a great day.", "Its' a great day.", "It is, a great day."],
+    correct: 1 },
+  { topic: 'Communication', color: '#22d3a5',
+    question: '"Each of the employees have submitted." — What is the error?',
+    options: ['No error', 'employees → employee', 'have → has', 'submitted → submits'],
+    correct: 2 }
+];
+// shuffle questions randomly so that each quiz attempt is different
+questionsList.sort(() => Math.random() - 0.5);
+// roadmap steps for each level
+var roadmapData = {
+  beginner: [
+    { title: 'Learn Programming Basics', time: 'Weeks 1-3', status: 'current',
+      desc: 'Pick Python or Java. Learn loops, functions, and OOP basics.',
+      tags: ['Python.org', 'W3Schools', '2 hrs/day'] },
+    { title: 'Study Core CS Subjects', time: 'Weeks 4-6', status: 'current',
+      desc: 'Cover OS, DBMS, CN basics. Use Neso Academy on YouTube.',
+      tags: ['Neso Academy', 'GFG', '1 hr/day'] },
+    { title: 'Start Easy DSA Problems', time: 'Weeks 7-10', status: 'upcoming',
+      desc: 'Arrays, strings, basic sorting. Solve 3 easy LeetCode problems daily.',
+      tags: ['LeetCode Easy', 'Love Babbar 450', 'CS50'] },
+    { title: 'Aptitude and Verbal Practice', time: 'Weeks 11-14', status: 'upcoming',
+      desc: '30 minutes of aptitude daily. IndiaBix mock tests twice a week.',
+      tags: ['IndiaBix', 'R.S. Aggarwal', 'The Hindu'] },
+    { title: 'Apply to Service Companies', time: 'Placement', status: 'locked',
+      desc: 'Target TCS, Wipro, Infosys. Register on TalentNext and InfyTQ early.',
+      tags: ['TalentNext', 'InfyTQ', 'CoCubes'] }
+  ],
+  intermediate: [
+    { title: 'DSA at Medium Level', time: 'Weeks 1-4', status: 'current',
+      desc: 'Trees, graphs, DP, greedy. Solve 100+ LeetCode problems.',
+      tags: ['Striver SDE Sheet', 'LeetCode Medium', 'Codeforces'] },
+    { title: 'Learn System Design Basics', time: 'Weeks 5-7', status: 'current',
+      desc: 'Load balancers, caching, API design. Design a URL shortener.',
+      tags: ['Gaurav Sen YT', 'Educative.io', 'Grokking SD'] },
+    { title: 'Do Mock Interviews', time: 'Weeks 8-10', status: 'current',
+      desc: 'Do 10+ mock interviews. Use Pramp for free practice sessions.',
+      tags: ['Pramp.com', 'InterviewBit', 'Mock weekly'] },
+    { title: 'Make 2-3 Projects', time: 'Weeks 9-12', status: 'upcoming',
+      desc: 'Build full-stack or DSA projects. Push everything to GitHub.',
+      tags: ['GitHub', 'Vercel', 'Portfolio'] },
+    { title: 'Apply to Mid Level Companies', time: 'Placement', status: 'locked',
+      desc: 'Target Cognizant, Capgemini, Accenture, Zoho, Freshworks.',
+      tags: ['LinkedIn', 'HackerEarth', 'Referrals'] }
+  ],
+  advanced: [
+    { title: 'Hard Problems + Contests', time: 'Weeks 1-3', status: 'current',
+      desc: 'LeetCode Hard, Codeforces Div.1. Segment trees, Tries, Advanced DP.',
+      tags: ['LeetCode Hard', 'Codeforces', 'USACO'] },
+    { title: 'Advanced System Design', time: 'Weeks 4-6', status: 'current',
+      desc: 'Design Twitter, YouTube, WhatsApp. HLD + LLD with design patterns.',
+      tags: ['ByteByteGo', 'Donne Martin', 'Exponent'] },
+    { title: 'Behavioural Interview Prep', time: 'Weeks 5-7', status: 'current',
+      desc: '15 STAR stories. Study Amazon Leadership Principles.',
+      tags: ['STAR Method', 'Amazon LPs', 'Glassdoor'] },
+    { title: 'Company Specific Prep', time: 'Weeks 7-9', status: 'current',
+      desc: 'Study each company\'s past questions, tech blogs, and job descriptions.',
+      tags: ['LeetCode Tags', 'Glassdoor', 'Tech Blogs'] },
+    { title: 'Apply to Top Companies', time: 'Placement', status: 'locked',
+      desc: 'Apply to Amazon, Flipkart, Microsoft, Google. Use referrals.',
+      tags: ['LinkedIn', 'Referrals', 'Campus Hiring'] }
+  ]
+};
+
+// companies for each level
+var companiesList = {
+  beginner: {
+    service: [
+      { name: 'TCS',    role: 'System Engineer',   salary: '3.6-4.5 LPA',
+        info: 'Largest IT company in India. Good training program for freshers.' },
+      { name: 'Wipro',  role: 'Project Engineer',  salary: '3.5-4.5 LPA',
+        info: 'Good entry level job. Diverse projects and decent mentoring.' },
+      { name: 'Infosys', role: 'Systems Engineer', salary: '3.6-4.5 LPA',
+        info: 'Use InfyTQ platform to apply. Training before project allocation.' },
+      { name: 'HCL',    role: 'Graduate Engineer', salary: '3.5-4.0 LPA',
+        info: 'Aptitude and communication focused hiring. Good learning culture.' }
+    ],
+    product: []
+  },
+  intermediate: {
+    service: [
+      { name: 'Cognizant',  role: 'Programmer Analyst', salary: '4.0-5.5 LPA',
+        info: 'Strong in BFSI and healthcare. Good technical growth.' },
+      { name: 'Capgemini',  role: 'Analyst',            salary: '3.8-5.0 LPA',
+        info: 'Global company with good fresher programs and European projects.' },
+      { name: 'Accenture',  role: 'Associate SE',       salary: '4.5-5.5 LPA',
+        info: 'Good exposure to consulting and digital transformation projects.' }
+    ],
+    product: [
+      { name: 'Zoho',       role: 'Software Developer', salary: '5.0-8.0 LPA',
+        info: 'Indian product company. Tests problem solving skills. Great culture.' },
+      { name: 'Freshworks', role: 'Associate Engineer', salary: '8-12 LPA',
+        info: 'Global SaaS company. Competitive pay and good product exposure.' }
+    ]
+  },
+  advanced: {
+    service: [
+      { name: 'TCS Digital', role: 'Digital Engineer',         salary: '7-9 LPA',
+        info: 'Premium track of TCS. Works on cloud and digital transformation.' },
+      { name: 'Infosys DSE', role: 'Digital Specialist Eng.',  salary: '9.5-12 LPA',
+        info: 'High performance track. Good pay and challenging work.' }
+    ],
+    product: [
+      { name: 'Amazon',    role: 'SDE-I',            salary: '30-45 LPA',
+        info: 'Leadership Principles + DSA heavy interviews. Top new grad program.' },
+      { name: 'Flipkart',  role: 'SDE-1',            salary: '25-38 LPA',
+        info: 'Top Indian product company. Fast growth and good tech culture.' },
+      { name: 'Microsoft', role: 'Software Engineer', salary: '40-60 LPA',
+        info: 'Great work-life balance. Strong DSA and system design interviews.' },
+      { name: 'Google',    role: 'Software Engineer', salary: '50-80 LPA',
+        info: 'Most competitive. 5 interview rounds. Best pay in the industry.' }
+    ]
+  }
+};
+
+// simple mentor logic based on user score and topic
+var mentorAnswers = {
+  dsa: {
+    beginner:
+      "For DSA at beginner level, start with Arrays and Strings. Solve 3 easy LeetCode problems every day. Don't jump to hard problems yet. Use Love Babbar 450 sheet and CS50 on YouTube. Just be consistent for 4 weeks and you'll see improvement.",
+    intermediate:
+      "At intermediate level, focus on Trees, Graphs, and DP. These come up in 70% of product company interviews. Solve 2 medium LeetCode problems daily and do weekly contests. Aim for 150+ problems before placement season. Use Striver's SDE Sheet.",
+    advanced:
+      "At advanced level, do LeetCode Hard and Codeforces contests. Learn Segment Trees, Trie, and advanced DP. You should have 250+ problems solved. Check company-specific tags on LeetCode and read past interview experiences on Glassdoor."
+  },
+  aptitude: {
+    beginner:
+      "Practice 30 minutes daily on IndiaBix. Focus on Percentages, Ratios, Speed-Distance and Number Systems. These topics cover 80% of service company aptitude tests. Target 75% accuracy first. Review all wrong answers.",
+    intermediate:
+      "Focus on speed now. Solve each question in under 60 seconds. Take full mock tests on CoCubes and AMCAT every weekend. Practice Logical Reasoning and Data Interpretation. Analyse mistakes the next day.",
+    advanced:
+      "Aptitude should already be strong. Now focus on company specific formats. Amazon's test is different from TCS. Practice advanced verbal reasoning. Aim for 90% accuracy under full timed conditions."
+  },
+  company: {
+    beginner:
+      "Target TCS, Wipro, Infosys, HCL for now. Register on TalentNext and InfyTQ right away - batches fill early. Their process is: Aptitude Test, Technical Interview, HR. Learn basic DSA and aptitude and you'll clear it.",
+    intermediate:
+      "You're ready for Cognizant, Capgemini, Accenture, Zoho and Freshworks. Apply to 8-10 companies at the same time. LinkedIn referrals really help here. Connect with seniors at your target companies now.",
+    advanced:
+      "Target Amazon, Flipkart, Microsoft and Google. You need strong DSA, System Design and behavioural prep for these. Apply early, campus drives fill up fast. Try to get a referral through LinkedIn - it helps a lot."
+  },
+  resume: {
+    beginner:
+      "Keep resume to 1 page only. Add education, 2-3 projects, skills, and certifications. Quantify things - instead of 'made a website' write 'built a web app used by 50+ users'. Use Jake's Resume template on Overleaf. Ask a friend to review it.",
+    intermediate:
+      "Show 2-3 good projects with GitHub links. Start every bullet with action verbs like Designed, Built, Reduced. Add your LeetCode profile if you have 100+ problems. Quantify your internship impact. Post on Reddit r/cscareerquestions for feedback.",
+    advanced:
+      "Show impact at scale. Add open source work or hackathon wins. Write 'Reduced API latency by 40%' not just 'improved API'. Tailor resume with keywords from the job description - ATS systems filter before humans see it."
+  },
+  hr: {
+    beginner:
+      "Prepare a 60 second 'Tell me about yourself'. Practice 'What are your strengths/weaknesses' and 'Why this company'. Be honest. Research the company for 30 minutes before the interview. Dress properly and make eye contact.",
+    intermediate:
+      "Prepare STAR format answers for 10 common questions. Questions like 'Tell me about a challenge', 'Team conflict', 'Where do you see yourself in 5 years' are very common. Practice with a friend and record yourself to improve.",
+    advanced:
+      "HR interviews focus on leadership and decision making at your level. Study Amazon's Leadership Principles - most big companies use similar ones. For salary negotiation, know your market value from Glassdoor and anchor high."
+  },
+  general: {
+    beginner:
+      "The most important thing right now is to be consistent. Study 2-3 hours daily: 1 hour DSA, 30 min core CS, 30 min aptitude. Track your week every Sunday. Don't rush to apply before you're ready.",
+    intermediate:
+      "To move to advanced, find your weakest topic and study it hard for 2 weeks. At the same time, build your LinkedIn and connect with seniors. Weekly mock interviews are very important now - start immediately.",
+    advanced:
+      "You're in a good position. The difference between candidates at your level is how clearly you communicate and how fast you solve problems. Work on system design explanation and polish your behavioural stories."
+  }
+};
+
+// what to study next based on weak areas
+var studyTips = {
+  DSA: {
+    beginner:     "Revise arrays, strings, and basic sorting. Solve 3 easy LeetCode problems daily. Start with Love Babbar 450 sheet.",
+    intermediate: "Focus on Trees, Graphs, DP. Use Striver's SDE Sheet. Aim for 150+ LeetCode problems.",
+    advanced:     "Practice LeetCode Hard problems. Study company specific tags and past interview questions."
+  },
+  Aptitude: {
+    beginner:     "Practice 30 minutes on IndiaBix daily. Focus on Percentages, Ratios, Time-Speed-Distance.",
+    intermediate: "Take timed mock tests on CoCubes. Aim for 60 second response per question. Do 1 mock test per week.",
+    advanced:     "Practice advanced verbal reasoning. Study company specific test patterns on PrepInsta."
+  },
+  'Core CS': {
+    beginner:     "Watch Neso Academy playlists for OS, DBMS and CN. Make short notes of important concepts.",
+    intermediate: "Study ACID properties, TCP/IP model, process scheduling and SQL query optimization deeply.",
+    advanced:     "Study advanced memory management, distributed DBMS, and network routing protocols."
+  },
+  Communication: {
+    beginner:     "Practice 'Tell me about yourself' daily. Read The Hindu for vocabulary. Record yourself speaking.",
+    intermediate: "Prepare 10 STAR format answers. Practice GD topics like AI, remote work, technology.",
+    advanced:     "Work on communication clarity under pressure. Practice explaining system design decisions."
+  }
+};
+
+// github and resume tips for the guide section
+var githubTips = [
+  { text: "<strong>Write a clear README</strong> for every project — what it does, how to run it, screenshots." },
+  { text: "<strong>Commit regularly.</strong> Consistent activity on your profile shows you're actively coding." },
+  { text: "<strong>Pin your best 6 repos</strong> — make sure they're clean and well described." },
+  { text: "<strong>Add a profile README</strong> with your skills, projects, and links. Recruiters check this." }
+];
+
+var resumeTips = [
+  { text: "<strong>Keep it 1 page</strong> — use a clean ATS-friendly template like Jake's Resume on Overleaf." },
+  { text: "<strong>Quantify achievements</strong> — '30% faster page load' is better than 'improved performance'." },
+  { text: "<strong>Add projects with tech stack</strong>, GitHub link, and what problem it solves." },
+  { text: "<strong>Match keywords</strong> from the job description — ATS systems filter before humans read." },
+  { text: "<strong>Add links</strong> — GitHub, LinkedIn, LeetCode. Make them easy to find." }
+];
+
+var communicationTips = [
+  { text: "<strong>Practise 'Tell me about yourself'</strong> under 60 seconds. Record and review it." },
+  { text: "<strong>Use STAR format</strong> for all behavioural questions — Situation, Task, Action, Result." },
+  { text: "<strong>It's okay to pause</strong> before answering. 5 seconds of thinking is fine." },
+  { text: "<strong>Ask one good question</strong> at the end — 'What does a good first month look like here?'" },
+  { text: "<strong>Send a thank you email</strong> within 24 hours after the interview." }
+];
+
+// user data stored here
+var userData = {
+  name: '',
+  role: '',
+  skills: [],
+  topicScores: {},
+  quizDone: false,
+  totalScore: 0,
+  level: '',
+  currentQuestion: 0,
+  hasAnswered: false
+};
+
+// save user data to localStorage
+function saveData() {
+  localStorage.setItem('skillsync_app', JSON.stringify(userData));
+}
+
+// load user data from localStorage
+function loadData() {
+  var saved = localStorage.getItem('skillsync_app');
+  if (saved) {
+    var parsed = JSON.parse(saved);
+    Object.keys(parsed).forEach(function(key) {
+      userData[key] = parsed[key];
+    });
+  }
+}
+
+// toggle skill checkbox on/off
+function toggleSkill(el) {
+  el.classList.toggle('on');
+}
+
+// login button clicked
+function handleLogin() {
+  var name = document.getElementById('inp-name').value.trim();
+  var role = document.getElementById('inp-role').value;
+
+  // get selected skills
+  var checked = document.querySelectorAll('.scb.on');
+  var skills = [];
+  checked.forEach(function(item) {
+    skills.push(item.getAttribute('data-skill'));
+  });
+
+  // basic validation
+  if (!name || skills.length === 0) {
+    document.getElementById('lerr').style.display = 'block';
+    return;
+  }
+  document.getElementById('lerr').style.display = 'none';
+
+  // save to userData
+  userData.name = name;
+  userData.role = role || 'Software Engineer';
+  userData.skills = skills;
+  saveData();
+
+  // switch to app page
+  document.getElementById('login-page').classList.remove('active');
+  document.getElementById('app-page').classList.add('active');
+  startApp();
+}
+
+// logout button clicked
+function handleLogout() {
+  localStorage.removeItem('skillsync_app');
+  // reset userData
+  userData = { name:'', role:'', skills:[], topicScores:{}, quizDone:false, totalScore:0, level:'', currentQuestion:0, hasAnswered:false };
+  document.getElementById('app-page').classList.remove('active');
+  document.getElementById('login-page').classList.add('active');
+}
+
+// called once after login
+function startApp() {
+  document.getElementById('tb-name').textContent = userData.name;
+  document.getElementById('tb-av').textContent = userData.name.charAt(0).toUpperCase();
+
+  // fill placement guide content
+  fillGuide();
+
+  // update dashboard
+  refreshDashboard();
+
+  // build roadmap and company list
+  buildRoadmap(userData.level || 'beginner');
+  buildCompanyList(userData.level || 'beginner');
+
+  // if quiz was already done before, show report
+  if (userData.quizDone) {
+    showReport();
+  }
+}
+
+// switch between sections
+function showSection(name) {
+  document.querySelectorAll('.view').forEach(function(v) {
+    v.classList.remove('active');
+  });
+  document.querySelectorAll('.ni').forEach(function(n) {
+    n.classList.remove('on');
+  });
+  document.getElementById('view-' + name).classList.add('active');
+  var navItem = document.getElementById('nav-' + name);
+  if (navItem) navItem.classList.add('on');
+}
+
+// update everything on the dashboard
+function refreshDashboard() {
+  var domainColors = {
+    DSA: '#4f8ef7',
+    Aptitude: '#f5c842',
+    'Core CS': '#7c5cfc',
+    Communication: '#22d3a5'
+  };
+
+  document.getElementById('dash-greet').textContent = 'Welcome back, ' + userData.name + '! 👋';
+  document.getElementById('ds-score').textContent = userData.quizDone ? userData.totalScore + '%' : '—';
+  document.getElementById('ds-level').textContent = userData.level ? capitalise(userData.level) : 'Not Assessed';
+  document.getElementById('ds-role').textContent = userData.role || '—';
+  document.getElementById('ds-sc').textContent = userData.skills.length;
+
+  // show skill progress bars
+  var skillsDiv = document.getElementById('ds-skills');
+  if (!userData.skills.length) {
+    skillsDiv.innerHTML = '<p style="color:var(--text2);font-size:0.8rem">No skills selected.</p>';
+  } else {
+    var barsHtml = '';
+    userData.skills.forEach(function(skill) {
+      var pct = userData.quizDone ? Math.round(((userData.topicScores[skill] || 0) / 2) * 100) : 0;
+      barsHtml += '<div class="pb">'
+        + '<div class="pb-t"><span style="font-size:0.77rem;font-weight:500">' + skill + '</span>'
+        + '<span>' + (userData.quizDone ? pct + '%' : 'N/A') + '</span></div>'
+        + '<div class="pb-bar"><div class="pb-fill" style="width:' + pct + '%;background:' + domainColors[skill] + '"></div></div>'
+        + '</div>';
+    });
+    skillsDiv.innerHTML = barsHtml;
+  }
+
+  // move the needle based on level
+  var needlePos = 5;
+  if (userData.quizDone) {
+    if (userData.level === 'advanced')     needlePos = 88;
+    else if (userData.level === 'intermediate') needlePos = 55;
+    else needlePos = 18;
+  }
+
+  var needle = document.getElementById('ds-needle');
+  if (needle) needle.style.left = needlePos + '%';
+
+  // update readiness text after quiz
+  if (userData.quizDone) {
+    var message = '';
+    if (userData.level === 'beginner')     message = 'You are in the <strong>Early Stage</strong>. Focus on basics and daily practice.';
+    else if (userData.level === 'intermediate') message = 'You are <strong>Getting There!</strong> Keep going and you\'ll be ready in 6-8 weeks.';
+    else message = 'You are <strong>Job Ready!</strong> Apply to top product companies now.';
+
+    document.getElementById('ds-ready').innerHTML =
+      '<p style="font-size:0.79rem;color:var(--text2);margin-bottom:10px">' + message + '</p>'
+      + '<div class="r-wrap"><div class="r-bar"><div class="r-need" style="left:' + needlePos + '%"></div></div></div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:0.61rem;color:var(--text3);margin-top:3px">'
+      + '<span>Beginner</span><span>Intermediate</span><span>Advanced</span></div>';
+  }
+}
+
+// start the quiz and shuffle questions
+function startQuiz() {
+
+    // shuffle questions each time user starts quiz
+    questionsList.sort(() => Math.random() - 0.5);
+
+    userData.currentQuestion = 0;
+    userData.hasAnswered = false;
+    userData.topicScores = { DSA: 0, Aptitude: 0, 'Core CS': 0, Communication: 0 };
+
+    document.getElementById('q-start').style.display  = 'none';
+    document.getElementById('q-active').style.display = 'block';
+    document.getElementById('q-done').style.display   = 'none';
+
+    showQuestion();
+}
+
+// show current question on screen
+function showQuestion() {
+  var q = questionsList[userData.currentQuestion];
+  var total = questionsList.length;
+  userData.hasAnswered = false;
+
+  // update progress bar
+  document.getElementById('qbar').style.width = ((userData.currentQuestion / total) * 100) + '%';
+  document.getElementById('q-cnt').textContent = 'Question ' + (userData.currentQuestion + 1) + ' of ' + total;
+  document.getElementById('q-dlbl').textContent = 'Topic: ' + q.topic;
+
+  // style the topic tag
+  var tag = document.getElementById('q-dtag');
+  tag.textContent = q.topic;
+  tag.style.background = q.color + '20';
+  tag.style.color = q.color;
+  tag.style.border = '1px solid ' + q.color + '50';
+
+  document.getElementById('q-txt').textContent = q.question;
+
+  // build answer buttons
+  var optionsDiv = document.getElementById('q-opts');
+  optionsDiv.innerHTML = '';
+  var letters = ['A', 'B', 'C', 'D'];
+
+  q.options.forEach(function(opt, i) {
+    var btn = document.createElement('button');
+    btn.className = 'opt';
+    btn.innerHTML = '<span class="olet">' + letters[i] + '</span>' + opt;
+    btn.onclick = function() { selectAnswer(i, btn); };
+    optionsDiv.appendChild(btn);
+  });
+
+  document.getElementById('q-next').style.display = 'none';
+}
+
+// user picked an answer
+function selectAnswer(index, clickedBtn) {
+  if (userData.hasAnswered) return;
+  userData.hasAnswered = true;
+
+  var q = questionsList[userData.currentQuestion];
+  var allButtons = document.querySelectorAll('.opt');
+
+  // disable all buttons
+  allButtons.forEach(function(b) { b.disabled = true; });
+
+  if (index === q.correct) {
+    clickedBtn.classList.add('correct');
+    userData.topicScores[q.topic]++;
+    showToast('✓ Correct!', 'green');
+  } else {
+    clickedBtn.classList.add('wrong');
+    allButtons[q.correct].classList.add('correct');
+    showToast('✗ Wrong answer', 'red');
+  }
+
+  document.getElementById('q-next').style.display = 'flex';
+}
+
+// go to next question
+function nextQuestion() {
+  userData.currentQuestion++;
+  if (userData.currentQuestion >= questionsList.length) {
+    finishQuiz();
+  } else {  
+    showQuestion();
+  }
+}
+
+// quiz is done
+function finishQuiz() {
+  document.getElementById('q-active').style.display = 'none';
+  document.getElementById('q-done').style.display = 'block';
+
+  // calculate total correct
+  var totalCorrect = 0;
+  Object.keys(userData.topicScores).forEach(function(topic) {
+    totalCorrect += userData.topicScores[topic];
+  });
+
+  // convert to percentage
+  userData.totalScore = Math.round((totalCorrect / questionsList.length) * 100);
+
+  // decide level using if else
+  if (userData.totalScore >= 71) {
+    userData.level = 'advanced';
+  } else if (userData.totalScore >= 41) {
+    userData.level = 'intermediate';
+  } else {
+    userData.level = 'beginner';
+  }
+
+  userData.quizDone = true;
+  saveData();
+
+  // show loading for 2 seconds then show result
+  document.getElementById('q-anim').style.display = 'flex';
+  document.getElementById('q-done-inner').style.display = 'none';
+
+  setTimeout(function() {
+    document.getElementById('q-anim').style.display = 'none';
+    document.getElementById('q-done-inner').style.display = 'block';
+
+    // update everything
+    refreshDashboard();
+    showReport();
+    buildRoadmap(userData.level);
+    buildCompanyList(userData.level);
+  }, 2000);
+}
+
+// reset quiz back to start
+function resetQuiz() {
+  userData.quizDone = false;
+  userData.totalScore = 0;
+  userData.level = '';
+  userData.topicScores = {};
+  saveData();
+
+  document.getElementById('q-done').style.display = 'none';
+  document.getElementById('q-start').style.display = 'block';
+}
+
+// show performance report
+function showReport() {
+  var emptyDiv = document.getElementById('rep-empty');
+  var resultsDiv = document.getElementById('rep-res');
+
+  if (!userData.quizDone) {
+    emptyDiv.style.display = 'block';
+    resultsDiv.style.display = 'none';
+    return;
+  }
+
+  emptyDiv.style.display = 'none';
+  resultsDiv.style.display = 'block';
+
+  var score = userData.totalScore;
+  var level = userData.level;
+
+  // ring color based on level
+  var ringColor = '#f59e0b'; // default beginner = yellow
+  if (level === 'advanced')     ringColor = '#10b981';
+  else if (level === 'intermediate') ringColor = '#3b82f6';
+
+  // draw score ring using conic gradient
+  document.getElementById('rep-ring').style.background =
+    'conic-gradient(' + ringColor + ' ' + score + '%, #1c2840 ' + score + '%)';
+  document.getElementById('rep-rnum').textContent = score + '%';
+  document.getElementById('rep-rnum').style.color = ringColor;
+
+  // show level pill
+  document.getElementById('rep-pill').innerHTML =
+    '<span class="pill ' + getLevelClass(level) + '">' + capitalise(level) + '</span>';
+
+  // summary message
+  var summary = '';
+  if (level === 'beginner')     summary = 'You are at the beginner stage. Work on basics before applying.';
+  else if (level === 'intermediate') summary = 'Good work! Keep improving and target mid level companies.';
+  else summary = 'Great score! You are ready for top product companies.';
+  document.getElementById('rep-sum').textContent = summary;
+
+  // show domain wise bars and classify strong/weak
+  var domainColors = { DSA:'#4f8ef7', Aptitude:'#f5c842', 'Core CS':'#7c5cfc', Communication:'#22d3a5' };
+  var topics = ['DSA', 'Aptitude', 'Core CS', 'Communication'];
+  var strongTopics = [];
+  var weakTopics = [];
+  var barsHtml = '';
+
+  topics.forEach(function(topic) {
+    var correct = userData.topicScores[topic] || 0;
+    var pct = Math.round((correct / 2) * 100);
+    var color = domainColors[topic];
+    var chipClass = '';
+    var chipLabel = '';
+
+    // classify using simple if else
+    if (pct >= 75) {
+      chipClass = 's';
+      chipLabel = 'Strong';
+      strongTopics.push(topic);
+    } else if (pct >= 50) {
+      chipClass = 'a';
+      chipLabel = 'Average';
+    } else {
+      chipClass = 'w';
+      chipLabel = 'Needs Work';
+      weakTopics.push(topic);
+    }
+
+    barsHtml += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">'
+      + '<div style="width:118px;font-size:0.77rem;font-weight:500;flex-shrink:0">' + topic + '</div>'
+      + '<div style="flex:1"><div class="pb-bar">'
+      + '<div class="pb-fill" style="width:' + pct + '%;background:' + color + '"></div>'
+      + '</div></div>'
+      + '<div style="width:34px;text-align:right;font-family:Fira Code,monospace;font-size:0.67rem;color:var(--text2)">' + pct + '%</div>'
+      + '<span class="chip ' + chipClass + '">' + chipLabel + '</span>'
+      + '</div>';
+  });
+
+  document.getElementById('rep-bars').innerHTML = barsHtml;
+
+  // strong areas
+  if (strongTopics.length > 0) {
+    document.getElementById('rep-strong').innerHTML = strongTopics.map(function(t) {
+      return '<span class="chip s">' + t + '</span>';
+    }).join(' ');
+  } else {
+    document.getElementById('rep-strong').innerHTML = '<span style="font-size:0.77rem;color:var(--text2)">Take more questions for full analysis.</span>';
+  }
+
+  // weak areas
+  if (weakTopics.length > 0) {
+    document.getElementById('rep-weak').innerHTML = weakTopics.map(function(t) {
+      return '<span class="chip w">' + t + '</span>';
+    }).join(' ');
+  } else {
+    document.getElementById('rep-weak').innerHTML = '<span style="font-size:0.77rem;color:var(--green)">No major weak areas!</span>';
+  }
+
+  // show study tips for weak topics
+  var recsHtml = '';
+  if (weakTopics.length === 0) {
+    recsHtml = '<div style="padding:10px 12px;background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.2);border-radius:8px;font-size:0.78rem;color:var(--green)">Great performance! Keep practicing and start applying now.</div>';
+  } else {
+    weakTopics.forEach(function(topic) {
+      var tip = studyTips[topic][level];
+      recsHtml += '<div style="display:flex;gap:9px;margin-bottom:9px;padding:10px 12px;background:var(--sur2);border:1px solid var(--border);border-radius:8px">'
+        + '<span style="font-size:0.95rem">💡</span>'
+        + '<div><div style="font-size:0.76rem;font-weight:700;color:var(--accent);margin-bottom:2px">' + topic + '</div>'
+        + '<div style="font-size:0.75rem;color:var(--text2);line-height:1.6">' + tip + '</div></div></div>';
+    });
+  }
+  document.getElementById('rep-recs').innerHTML = recsHtml;
+}
+
+// fill question in mentor input
+function fillQuestion(text) {
+  document.getElementById('m-inp').value = text;
+}
+
+// get mentor answer based on question and level
+function getMentorAnswer() {
+  var question = document.getElementById('m-inp').value.trim().toLowerCase();
+  if (!question) {
+    showToast('Please type a question first!', 'yellow');
+    return;
+  }
+
+  var level = userData.level || 'beginner';
+
+  // check keywords using if else and decide which topic
+  var topic = 'general';
+
+  if (question.match(/dsa|algorithm|leetcode|data structure|coding|graph|tree|array|sort/)) {
+    topic = 'dsa';
+  } else if (question.match(/aptitude|quant|math|logical|reasoning|numeric/)) {
+    topic = 'aptitude';
+  } else if (question.match(/compan|apply|amazon|flipkart|google|tcs|wipro|where should/)) {
+    topic = 'company';
+  } else if (question.match(/resume|cv|portfolio|github|project/)) {
+    topic = 'resume';
+  } else if (question.match(/hr|interview|behaviour|communication|speak|tell me|star/)) {
+    topic = 'hr';
+  }
+
+  // get the matching answer
+  var answer = mentorAnswers[topic][level];
+
+  // add user's name and role
+  var fullAnswer = 'Hi ' + userData.name + '! ' + answer;
+  if (userData.role) {
+    fullAnswer += ' Since you want to be a <strong>' + userData.role + '</strong>, this is especially useful for you.';
+  }
+
+  document.getElementById('m-ans-txt').innerHTML = fullAnswer;
+  document.getElementById('m-ans').classList.add('show');
+  showToast('Got your answer!', 'green');
+}
+
+// build the roadmap for given level
+function buildRoadmap(level) {
+  var steps = roadmapData[level] || roadmapData['beginner'];
+  var levelColor = 'var(--yellow)';
+  if (level === 'intermediate') levelColor = 'var(--accent)';
+  else if (level === 'advanced') levelColor = 'var(--green)';
+
+  var html = '<div style="display:flex;align-items:center;gap:7px;margin-bottom:16px">'
+    + '<span class="pill ' + getLevelClass(level) + '">' + capitalise(level) + ' Roadmap</span>'
+    + '<span style="font-size:0.74rem;color:var(--text2)">Based on your current level</span></div>'
+    + '<div class="rm-wrap">';
+
+  steps.forEach(function(step, i) {
+    var tagsHtml = step.tags.map(function(tag) {
+      return '<span class="rm-tag">' + tag + '</span>';
+    }).join('');
+
+    html += '<div class="rm-step ' + step.status + '" style="animation-delay:' + (i * 0.08) + 's">'
+      + '<h4>' + (i + 1) + '. ' + step.title + '</h4>'
+      + '<p>' + step.desc + '</p>'
+      + '<div class="rm-tags">'
+      + '<span class="rm-tag" style="color:' + levelColor + ';border-color:' + levelColor + '60">' + step.time + '</span>'
+      + tagsHtml
+      + '</div></div>';
+  });
+
+  html += '</div>';
+  document.getElementById('rm-out').innerHTML = html;
+}
+
+// build company list for given level
+function buildCompanyList(level) {
+  var data = companiesList[level] || companiesList['beginner'];
+  var levelColor = 'var(--yellow)';
+  if (level === 'intermediate') levelColor = 'var(--accent)';
+  else if (level === 'advanced') levelColor = 'var(--green)';
+
+  var html = '<div style="display:flex;align-items:center;gap:7px;margin-bottom:16px">'
+    + '<span class="pill ' + getLevelClass(level) + '">' + capitalise(level) + ' Level</span>'
+    + '<span style="font-size:0.74rem;color:var(--text2)">Best companies for your level</span></div>';
+
+  // service companies
+  if (data.service && data.service.length > 0) {
+    html += '<h3 style="font-size:0.7rem;font-weight:700;color:var(--yellow);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">🏗 Service-Based Companies</h3>'
+      + '<div class="g2" style="margin-bottom:18px">';
+
+    data.service.forEach(function(co) {
+      html += '<div class="co-card">'
+        + '<div class="co-badge" style="color:var(--yellow)">Service-Based</div>'
+        + '<h4>' + co.name + '</h4>'
+        + '<p>' + co.info + '</p>'
+        + '<div class="ctc-r">'
+        + '<span class="ctc-l">Expected Salary</span>'
+        + '<span class="ctc-v">' + co.salary + '</span>'
+        + '</div>'
+        + '<div style="margin-top:3px;font-size:0.61rem;color:var(--text3)">' + co.role + '</div>'
+        + '</div>';
+    });
+    html += '</div>';
+  }
+
+  // product companies
+  if (data.product && data.product.length > 0) {
+    html += '<h3 style="font-size:0.7rem;font-weight:700;color:var(--green);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">🚀 Product-Based Companies</h3>'
+      + '<div class="g2">';
+
+    data.product.forEach(function(co) {
+      html += '<div class="co-card">'
+        + '<div class="co-badge" style="color:var(--green)">Product-Based</div>'
+        + '<h4>' + co.name + '</h4>'
+        + '<p>' + co.info + '</p>'
+        + '<div class="ctc-r">'
+        + '<span class="ctc-l">Expected Salary</span>'
+        + '<span class="ctc-v">' + co.salary + '</span>'
+        + '</div>'
+        + '<div style="margin-top:3px;font-size:0.61rem;color:var(--text3)">' + co.role + '</div>'
+        + '</div>';
+    });
+    html += '</div>';
+  }
+
+  document.getElementById('co-out').innerHTML = html;
+}
+
+// fill the placement guide with tips
+function fillGuide() {
+  document.getElementById('guide-github').innerHTML = githubTips.map(function(tip, i) {
+    return '<div class="guide-item">'
+      + '<div class="guide-n">' + (i + 1) + '</div>'
+      + '<div class="guide-t">' + tip.text + '</div>'
+      + '</div>';
+  }).join('');
+
+  document.getElementById('guide-resume').innerHTML = resumeTips.map(function(tip, i) {
+    return '<div class="guide-item">'
+      + '<div class="guide-n">' + (i + 1) + '</div>'
+      + '<div class="guide-t">' + tip.text + '</div>'
+      + '</div>';
+  }).join('');
+
+  document.getElementById('guide-comm').innerHTML = communicationTips.map(function(tip, i) {
+    return '<div class="guide-item">'
+      + '<div class="guide-n">' + (i + 1) + '</div>'
+      + '<div class="guide-t">' + tip.text + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+// helper - capitalize first letter
+function capitalise(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+// helper - get pill CSS class for level
+function getLevelClass(level) {
+  if (level === 'beginner') return 'beg';
+  if (level === 'intermediate') return 'int';
+  if (level === 'advanced') return 'adv';
+  return 'beg';
+}
+
+// show toast notification
+function showToast(msg, type) {
+  var el = document.getElementById('toast');
+  var colors = { green: 'var(--green)', red: 'var(--red)', yellow: 'var(--yellow)' };
+  el.textContent = msg;
+  el.style.borderColor = colors[type] || 'var(--bor2)';
+  el.classList.add('show');
+  setTimeout(function() {
+    el.classList.remove('show');
+  }, 2000);
+}
+
+// on page load - check if user already logged in
+window.onload = function() {
+  loadData();
+  if (userData.name) {
+    document.getElementById('login-page').classList.remove('active');
+    document.getElementById('app-page').classList.add('active');
+    startApp();
+  }
+};
+
+</script>
+</body>
+</html>
